@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -35,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(seconds: 1), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (BuildContext context) => NewsPage()),
       );
@@ -47,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          color: Colors.white, // Background color
+          color: Colors.white, 
           image: DecorationImage(
             image: AssetImage('assets/splash_image.png'), 
             fit: BoxFit.cover,
@@ -65,6 +66,7 @@ class NewsPage extends StatefulWidget {
 
 class _NewsPageState extends State<NewsPage> {
   List<dynamic> newsList = [];
+  List<String> imageUrls = [];
 
   @override
   void initState() {
@@ -81,6 +83,7 @@ class _NewsPageState extends State<NewsPage> {
       if (response.statusCode == 200) {
         setState(() {
           newsList = json.decode(response.body)['data'];
+          imageUrls = newsList.map<String>((item) => item['image_url']).toList();
         });
       } else {
         throw Exception('Failed to load news');
@@ -90,18 +93,43 @@ class _NewsPageState extends State<NewsPage> {
     }
   }
 
+  void _showFullScreenImage(String imageUrl) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+        ),
+        backgroundColor: Colors.black,
+        body: Center(
+          child: InteractiveViewer(
+            child: Image.network(
+              imageUrl,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      );
+    }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Top News'),
       ),
-      body: ListView.builder(
-        itemCount: newsList.length,
+      body: GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 4.0,
+          crossAxisSpacing: 4.0,
+        ),
+        itemCount: imageUrls.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(newsList[index]['title']),
-            subtitle: Text(newsList[index]['description']),
+          return GestureDetector(
+            onTap: () => _showFullScreenImage(imageUrls[index]),
+            child: Image.network(imageUrls[index]),
           );
         },
       ),
